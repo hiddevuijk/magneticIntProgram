@@ -1,0 +1,34 @@
+#system parameters
+N = 90
+L = 10.
+m = 0.002
+v0 = 30.
+Dr = 20.
+seed = 213436111
+
+#magnetic field parameters
+BType = linearAsym
+B = 4.
+w = 0.6283185307179586
+
+#interaction parameters
+sigma = 1.
+epsilon = 1.
+
+#wall parameters
+WallType = tube
+sigmaW = .25
+epsilonW = 1.
+
+#integration parameter
+Nt_init = 10
+Nt = 50
+sample_freq = 1
+print_freq = 1000
+t_unit = 1000
+dt = 0.000005
+bs = .5
+
+rc = 1.122462048309373
+rn = 1.6
+ncell = 8
