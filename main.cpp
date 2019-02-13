@@ -5,12 +5,12 @@
 #include "xyz.h"
 #include "bfield.h"
 #include "walls.h"
-#include "system_list.h"
-//#include "system_cell.h"
+#include "system.h"
 #include "density.h"
 #include "orientation.h"
 #include "flux.h"
 #include "pressure.h"
+#include "energy.h"
 
 #include <iostream>
 #include <iomanip>
@@ -48,6 +48,7 @@ int main()
 	Orientation_xy orientation(int_params.bs,system.L);
 	Flux_xy flux(int_params.bs,system.L,system.N);
 	Pressure pressure(int_params.bs,system.L,system.N);
+	Energy energy(system.N);
 
 	// integrate Nt_init time steps
 	unsigned int ti;
@@ -60,9 +61,7 @@ int main()
 		}
 		// make t_unit time steps
 		for(unsigned int tti=0; tti < int_params.t_unit; ++tti)	{
-			//system.step(); // needs system.h
-			system.step_list(); // needs system_list.h
-			//system.step_cell();
+			system.step_list();
 		}
 	}
 
@@ -77,9 +76,7 @@ int main()
 
 		// make t_unit time steps
 		for(unsigned int tti = 0;tti<int_params.t_unit;++tti) {
-			//system.step();	// needs system.h
-			system.step_list();	// needs system_list.h	
-			//system.step_cell();
+			system.step_list();
 		}
 	
 		pressure.sample(system);
@@ -87,6 +84,7 @@ int main()
 			density.sample(system);
 			orientation.sample(system);
 			flux.sample(system);
+			energy.sample(system);
 		}
 
 	}
@@ -116,6 +114,10 @@ int main()
 	pressure.normalize();
 	pressure.writeX("pressureX.dat");
 	pressure.writeY("pressureY.dat");
+
+	// normalize and save energy
+	energy.normalize();
+	energy.write("energy.dat");
 
 	// write final configuration
 	system.write("final_config.dat");

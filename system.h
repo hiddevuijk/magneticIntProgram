@@ -79,6 +79,7 @@ public:
 
 	// increment time
 	void step();
+	void step_list();
 
 	void write(const char* outname);
 	
@@ -87,21 +88,79 @@ public:
 	XYZ xi,eta,dp,dv;	
 
 
-};
+	const unsigned int MAX_NEIGHBOUR;
+	std::vector<std::vector<unsigned int> > neigh_index;
+	std::vector<unsigned int> neigh_number;
+	std::vector<XYZ> dist_since_update;
+	double rn;
 
+	void neighbour_update();
+	double maxDist;
+	double max2Dist;
+	double distUpdate;
+};
+void System::step_list()
+{
+	interactions.get_forces(Fint,r,neigh_index,neigh_number);
+	for(unsigned int i=0;i<N;++i) {
+		
+		Bri = bfield.get_field(r[i]);
+		
+		r[i] += v[i]*dt;
+
+		// check if sum of two largest distances moved
+		// is larger than maxDist, if true
+		// update neighbour list.
+		dist_since_update[i] += v[i]*dt;
+		double dist = dist_since_update[i].length();
+		if( dist > max2Dist ){
+			if( dist > maxDist) {
+				max2Dist = maxDist;
+				maxDist = dist;
+			} else {
+				max2Dist = dist;
+			}
+		}
+		if( maxDist+max2Dist > distUpdate) {
+			neighbour_update();
+		}	
+
+
+		system_func::xyz_random_normal(xi,rndist);
+		xi *= sqrt_2dt;
+
+		dv.x = ( Bri*v[i].y*dt - v[i].x*dt + Fint[i].x*dt +
+				Fwall[i].x*dt + v0*p[i].x*dt + xi.x)/m;	
+		dv.y = (-Bri*v[i].x*dt - v[i].y*dt + Fint[i].y*dt +
+				Fwall[i].y*dt + v0*p[i].y*dt + xi.y)/m;	
+		dv.z = (-v[i].z*dt + Fwall[i].z*dt + Fint[i].z*dt +
+				v0*p[i].z*dt + xi.z)/m;
+
+		v[i] += dv;
+	
+		Fwall[i] = wall.wallForce(r[i]);
+
+		if( v0 > 0) {
+			
+			system_func::xyz_random_normal(eta,rndist);
+			eta *= sqrt_2dt_Dr;
+
+			dp = xyz::cross(eta,p[i]);
+
+			p[i] += dp;
+			p[i].normalize();
+		}
+	}
+
+	t += dt;
+}
 void System::step()
 {
-	//if(interactions.get_epsilon() > 0 and (ti%10 == 0)) {
-	//	interactions.get_forces(Fint,r);
-	//	ti = 0;
-	//}
-	//++ti;
 
 	interactions.get_forces(Fint,r);
 	for(unsigned int i=0;i<N;++i) {
 		
 		Bri = bfield.get_field(r[i]);
-		
 		r[i] += v[i]*dt;
 
 		system_func::xyz_random_normal(xi,rndist);
@@ -133,7 +192,28 @@ void System::step()
 	t += dt;
 }
 
+void System::neighbour_update()
+{
+	double dist;
+	std::fill(neigh_number.begin(),
+			neigh_number.end(),0);
+	for(unsigned int i=0;i<(N-1);++i) {
+		for(unsigned int j=i+1;j<N;++j) {
+			dist = xyz::dist_sq_pbc(r[i],r[j],L);
+			if(dist < rn*rn) {
+				neigh_index[i][ neigh_number[i] ] = j;
+				//neigh_index[j][ neigh_number[j] ] = i;
+				++neigh_number[i];
+				//++neigh_number[j];
+			}
+		}
+	}
+	std::fill(dist_since_update.begin(),
+		dist_since_update.end(),XYZ(0,0,0) );
+	maxDist = 0;
+	max2Dist = 0;
 
+}
 
 System::System(ConfigFile config)
 :
@@ -147,7 +227,8 @@ System::System(ConfigFile config)
 	wall(config.read<double>("sigmaW"),
 		config.read<double>("epsilonW"),
 		config.read<double>("L"),
-		config.read<string>("WallType"))
+		config.read<string>("WallType")),
+	MAX_NEIGHBOUR(1000), rn(config.read<double>("rn"))
 {
 	XYZ rr;
 
@@ -177,6 +258,22 @@ System::System(ConfigFile config)
 				config.read<double>("sigma") );
 	Fint = std::vector<XYZ>(N,XYZ(0,0,0));
 	ti = 0;
+
+
+	neigh_index = std::vector<std::vector<unsigned int> >(N,
+			std::vector<unsigned int>(MAX_NEIGHBOUR,0) );
+
+	neigh_number = std::vector<unsigned int>(N,0);
+	dist_since_update = std::vector<XYZ>(N,XYZ(0,0,0));
+	maxDist = 0;
+	max2Dist = 0;
+	
+	double rc = config.read<double>("rc");
+	distUpdate = rn-rc;
+	if( rn > 0.5*L) {
+		distUpdate = 0.5*L;
+	}
+	
 }
 
 void System::init_random()
@@ -239,7 +336,7 @@ void System::write(const char* outname)
 	XYZ temp;
 	for(unsigned int i=0;i<N;++i) {
 		temp = r[i];
-		temp.pbc(L);	
+		//temp.pbc(L);	
 		out << temp.x << '\t';
 		out << temp.y << '\t';
 		out << temp.z;

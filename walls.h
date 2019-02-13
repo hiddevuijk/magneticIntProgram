@@ -12,13 +12,19 @@
 class WallAll {
 public:
 	virtual XYZ f( const XYZ& r) = 0;
+	virtual double u(const XYZ& r) = 0;
 
+	double ulj(double dist) {
+		double dist6 = pow(sig/dist,6);
+		return 4*eps*dist6*(dist6-1) + eps;
+	}
 
 	// force from LJ potential
 	double flj(double dist) {
 		double dist6 = pow(sig/dist,6);
 		return 24*eps*dist6*(2*dist6-1)/dist;
 		}
+
 
 	double get_sigma() const {return sig;}
 	double get_epsilon() const {return eps;}
@@ -32,6 +38,7 @@ protected:
 };
 
 class NoWall: public WallAll {
+	double u(const XYZ& r) { return 0;}
 	XYZ f(const XYZ& r)
 		{ XYZ Fwall(0,0,0);
 			return Fwall;
@@ -47,6 +54,21 @@ public:
 		 {	sig = sigg; eps = epss;
 			rWCA = sigg*pow(2.,1./6.); 
 			L_minus_rWCA = l-rWCA; L = l;}
+	double u(const XYZ& r) {
+		double temp =0;
+		if(r.x>L_minus_rWCA) {
+			temp += ulj(L-r.x);
+		} else if(r.x<rWCA) {
+			temp += ulj(r.x);
+		}
+
+		if(r.y>L_minus_rWCA) {
+			temp += ulj(L-r.y);
+		} else if( r.y < rWCA) {
+			temp += ulj(r.y);
+		}
+		return temp;
+	}
 
 	XYZ f(const XYZ& r)
 	{
@@ -77,6 +99,16 @@ public:
 			rWCA = sigg*pow(2.,1./6.); 
 			L_minus_rWCA = l-rWCA; L = l;}
 
+	double u(const XYZ& r) {
+		double temp = 0;
+		if(r.x>L_minus_rWCA) {
+			temp += ulj(L-r.x);
+		} else if(r.x<rWCA) {
+			temp += ulj(r.x);
+		}
+		return temp;
+	}
+
 	XYZ f(const XYZ& r)
 	{
 		XYZ Fwall(0,0,0);
@@ -96,6 +128,9 @@ public:
 	Wall();
 	Wall(double sig, double eps, double L,
 		std::string wallName);
+
+	double wallPotential(const XYZ& r) const
+		{return wall_ptr->u(r); }
 
 	XYZ wallForce(const XYZ &r) const
 		{ return wall_ptr->f(r); }

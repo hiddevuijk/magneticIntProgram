@@ -12,10 +12,10 @@ public:
 
 	double x,y,z;
 
-	double length()
+	double length() const 
 		{ return std::sqrt(x*x + y*y + z*z); }
 
-	double length_sq()
+	double length_sq() const
 		{ return x*x + y*y + z*z; } 
 
 	void normalize( double d = 1.)
