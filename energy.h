@@ -27,6 +27,7 @@ private:
 
 	double Ukin;
 	double Uwall;
+	double Uint;
 	unsigned int Nsample;
 	unsigned int N; // number of particles
 };
@@ -36,6 +37,7 @@ Energy::Energy(int Nparticles)
 
 	Ukin = 0.;
 	Uwall = 0.;
+	Uint = 0.;
 	Nsample = 0;
 	N = Nparticles;
 }	
@@ -50,6 +52,7 @@ void Energy::sample(const System &system)
 		Ukin += 0.5*system.m*(system.v[i].length_sq());
 		Uwall += system.wall.wallPotential(system.r[i]);
 	}
+	Uint += system.Uint;
 	++Nsample;
 		
 }
@@ -62,13 +65,14 @@ void Energy::normalize()
 
 	Ukin /= Nsample*N;
 	Uwall /= Nsample*N;
+	Uint /= Nsample*N;
 }
 
 void Energy::write(const char* outname)
 {
 	std::ofstream out;
 	out.open(outname);
-	out << Ukin << ' ' << Uwall;
+	out << Ukin << '\t' << Uwall << '\t' << Uint;
 
 	out.close();
 

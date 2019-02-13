@@ -1,5 +1,5 @@
 #system parameters
-N = 90
+N = 900
 L = 10.
 m = 0.002
 v0 = 30.
@@ -21,11 +21,11 @@ sigmaW = .25
 epsilonW = 1.
 
 #integration parameter
-Nt_init = 10
+Nt_init = 50
 Nt = 50
 sample_freq = 1
-print_freq = 1000
-t_unit = 1000
+print_freq = 10
+t_unit = 100
 dt = 0.000005
 bs = .5
 

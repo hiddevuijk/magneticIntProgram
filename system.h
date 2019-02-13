@@ -71,6 +71,7 @@ public:
 	Interactions interactions;
 	// interaction force matrix
 	std::vector<XYZ> Fint;
+	double Uint;
 	int ti;
 
 	// initialize with random coordinates.
@@ -101,7 +102,8 @@ public:
 };
 void System::step_list()
 {
-	interactions.get_forces(Fint,r,neigh_index,neigh_number);
+	//interactions.get_forces(Fint,r,neigh_index,neigh_number);
+	interactions.get_forces(Fint,Uint,r,neigh_index,neigh_number);
 	for(unsigned int i=0;i<N;++i) {
 		
 		Bri = bfield.get_field(r[i]);
@@ -257,6 +259,7 @@ System::System(ConfigFile config)
 	interactions = Interactions(config.read<double>("epsilon"),
 				config.read<double>("sigma") );
 	Fint = std::vector<XYZ>(N,XYZ(0,0,0));
+	Uint = 0.;
 	ti = 0;
 
 

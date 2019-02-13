@@ -10,7 +10,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(LFLAGS)  $(OBJS) -o $(TARGET)
 
 main.o: main.cpp xyz.h bfield.h walls.h \
-	 pressure.h system_list.h density.h orientation.h \
+	 pressure.h system.h density.h orientation.h \
 	 flux.h interactions.h energy.h
 	$(CC) $(CFLAGS) main.cpp
 
